@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: express-gold-api
-    runtime: node
-    buildCommand: pnpm install && pnpm run build
-    startCommand: node artifacts/api-server/dist/index.js
-    envVars:
-      - key: NODE_ENV
-        value: production
