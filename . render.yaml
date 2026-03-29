@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: express-gold-investments
-    runtime: node
-    buildCommand: pnpm install && pnpm run build
-    startCommand: node lib/index.js
-    env:
-      NODE_VERSION: 20
