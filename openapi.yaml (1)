@@ -1,0 +1,603 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Crypto Investment Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: crypto
+    description: Crypto market data
+  - name: portfolio
+    description: Portfolio management
+  - name: watchlist
+    description: Watchlist management
+  - name: investments
+    description: Investment plans and user investments
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /crypto/market:
+    get:
+      operationId: getMarketData
+      tags: [crypto]
+      summary: Get crypto market data
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Market data list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CryptoAsset"
+                  total:
+                    type: integer
+                required:
+                  - data
+                  - total
+
+  /crypto/asset/{symbol}:
+    get:
+      operationId: getAssetDetails
+      tags: [crypto]
+      summary: Get asset details
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoAsset"
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /portfolio:
+    get:
+      operationId: getPortfolio
+      tags: [portfolio]
+      summary: Get portfolio holdings
+      responses:
+        "200":
+          description: Portfolio holdings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  holdings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioHolding"
+                  totalValue:
+                    type: number
+                  totalProfitLoss:
+                    type: number
+                  totalProfitLossPercent:
+                    type: number
+                required:
+                  - holdings
+                  - totalValue
+                  - totalProfitLoss
+                  - totalProfitLossPercent
+    post:
+      operationId: addHolding
+      tags: [portfolio]
+      summary: Add a holding to portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHolding"
+      responses:
+        "201":
+          description: Holding created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioHolding"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /portfolio/{id}:
+    put:
+      operationId: updateHolding
+      tags: [portfolio]
+      summary: Update a portfolio holding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHolding"
+      responses:
+        "200":
+          description: Holding updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioHolding"
+        "404":
+          description: Holding not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteHolding
+      tags: [portfolio]
+      summary: Delete a portfolio holding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Holding deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+
+  /watchlist:
+    get:
+      operationId: getWatchlist
+      tags: [watchlist]
+      summary: Get watchlist items
+      responses:
+        "200":
+          description: Watchlist items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WatchlistItem"
+                required:
+                  - items
+    post:
+      operationId: addToWatchlist
+      tags: [watchlist]
+      summary: Add asset to watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWatchlistItem"
+      responses:
+        "201":
+          description: Item added to watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /watchlist/{id}:
+    delete:
+      operationId: removeFromWatchlist
+      tags: [watchlist]
+      summary: Remove item from watchlist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+
+  /investments/plans:
+    get:
+      operationId: getInvestmentPlans
+      tags: [investments]
+      summary: Get all investment plans
+      responses:
+        "200":
+          description: List of investment plans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plans:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InvestmentPlan"
+                required:
+                  - plans
+
+  /investments:
+    get:
+      operationId: getUserInvestments
+      tags: [investments]
+      summary: Get all user investments
+      responses:
+        "200":
+          description: List of user investments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  investments:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserInvestment"
+                  totalInvested:
+                    type: number
+                  totalReturns:
+                    type: number
+                  activeCount:
+                    type: integer
+                required:
+                  - investments
+                  - totalInvested
+                  - totalReturns
+                  - activeCount
+    post:
+      operationId: createInvestment
+      tags: [investments]
+      summary: Create a new investment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvestment"
+      responses:
+        "201":
+          description: Investment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInvestment"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /investments/{id}:
+    delete:
+      operationId: cancelInvestment
+      tags: [investments]
+      summary: Cancel an investment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Investment cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "404":
+          description: Investment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    CryptoAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        priceChange24h:
+          type: number
+        priceChangePercent24h:
+          type: number
+        marketCap:
+          type: number
+        volume24h:
+          type: number
+        circulatingSupply:
+          type: number
+        rank:
+          type: integer
+        logoUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - symbol
+        - name
+        - price
+        - priceChange24h
+        - priceChangePercent24h
+        - marketCap
+        - volume24h
+        - circulatingSupply
+        - rank
+
+    PortfolioHolding:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        averageBuyPrice:
+          type: number
+        currentPrice:
+          type: number
+        currentValue:
+          type: number
+        profitLoss:
+          type: number
+        profitLossPercent:
+          type: number
+        logoUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - symbol
+        - name
+        - quantity
+        - averageBuyPrice
+        - currentPrice
+        - currentValue
+        - profitLoss
+        - profitLossPercent
+
+    CreateHolding:
+      type: object
+      properties:
+        symbol:
+          type: string
+        quantity:
+          type: number
+        averageBuyPrice:
+          type: number
+      required:
+        - symbol
+        - quantity
+        - averageBuyPrice
+
+    UpdateHolding:
+      type: object
+      properties:
+        quantity:
+          type: number
+        averageBuyPrice:
+          type: number
+
+    WatchlistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        priceChangePercent24h:
+          type: number
+        logoUrl:
+          type: string
+          nullable: true
+      required:
+        - id
+        - symbol
+        - name
+        - price
+        - priceChangePercent24h
+
+    CreateWatchlistItem:
+      type: object
+      properties:
+        symbol:
+          type: string
+      required:
+        - symbol
+
+    InvestmentPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        tier:
+          type: string
+          enum: [starter, pro, vip]
+        minAmount:
+          type: number
+        maxAmount:
+          type: number
+          nullable: true
+        durationDays:
+          type: integer
+        roiPercent:
+          type: number
+        description:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - name
+        - tier
+        - minAmount
+        - durationDays
+        - roiPercent
+        - description
+        - features
+
+    UserInvestment:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        planName:
+          type: string
+        tier:
+          type: string
+        amount:
+          type: number
+        expectedReturn:
+          type: number
+        roiPercent:
+          type: number
+        durationDays:
+          type: integer
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        daysRemaining:
+          type: integer
+        progressPercent:
+          type: number
+      required:
+        - id
+        - planId
+        - planName
+        - tier
+        - amount
+        - expectedReturn
+        - roiPercent
+        - durationDays
+        - status
+        - startDate
+        - endDate
+        - daysRemaining
+        - progressPercent
+
+    CreateInvestment:
+      type: object
+      properties:
+        planId:
+          type: integer
+        amount:
+          type: number
+      required:
+        - planId
+        - amount
